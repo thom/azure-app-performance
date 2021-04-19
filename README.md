@@ -1,4 +1,38 @@
-# Enhancing Applications
+# Udacity Cloud Developer using Microsoft Azure Nanodegree Program - Project: Enhancing Applications
+
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Dependencies](#dependencies)
+  - [Required Python Libraries](#required-python-libraries)
+- [Local Environment Setup (Optional)](#local-environment-setup-optional)
+  - [Install Redis](#install-redis)
+  - [Create a Virtual Environment](#create-a-virtual-environment)
+- [Azure Environment Setup](#azure-environment-setup)
+  - [Azure VM Scale Set](#azure-vm-scale-set)
+  - [Setup Azure Pipeline to Deploy to VM Scale Set](#setup-azure-pipeline-to-deploy-to-vm-scale-set)
+- [Project Instructions](#project-instructions)
+  - [Application Insights & Log Analytics](#application-insights--log-analytics)
+    - [Create a Log Analytics workspace resource](#create-a-log-analytics-workspace-resource)
+    - [Create an Application Insights resource](#create-an-application-insights-resource)
+    - [Enable Application Insights monitoring for the VM Scale Set](#enable-application-insights-monitoring-for-the-vm-scale-set)
+    - [Add the reference Application Insights to `main.py` and specify the instrumentation key](#add-the-reference-application-insights-to-mainpy-and-specify-the-instrumentation-key)
+    - [Add custom event telemetry when 'Dogs' is clicked and when 'Cats' is clicked](#add-custom-event-telemetry-when-dogs-is-clicked-and-when-cats-is-clicked)
+    - [Create a query to view the event telemetry in Log Analytics](#create-a-query-to-view-the-event-telemetry-in-log-analytics)
+    - [Create a chart from query showing when 'Dogs' or 'Cats' is clicked](#create-a-chart-from-query-showing-when-dogs-or-cats-is-clicked)
+  - [Monitoring Containers](#monitoring-containers)
+  - [Autoscaling](#autoscaling)
+  - [Runbook](#runbook)
+- [Submissions](#submissions)
+- [Built With](#built-with)
+  - [Software](#software)
+  - [Open-source 3rd-party](#open-source-3rd-party)
+- [Clean-up](#clean-up)
+- [References](#references)
+- [Requirements](#requirements)
+- [License](#license)
+
+## Introduction
 
 In this project, you will apply the skills you have acquired in the Azure Performance course to collect and display performance and health data about an application. This is only half the battle; the other half is making informed decisions about the data and automating remediation tasks. You will use a combination of cloud technologies, such as Azure Kubernetes Service, VM Scale Sets, Application Insights, Azure Log Analytics, and Azure Runbooks to showcase your skills in diagnosing and rectifying application and infrastructure problems.
 
@@ -11,28 +45,33 @@ In this project, you'll be tasked to do the following:
 
 ## Getting Started
 
+1. Clone this repository
+2. Ensure you have all the dependencies
+3. Follow the environment setup guidelines and instructions below
+
 ### Prerequisites
 
 1. [Create a free Azure Account](https://azure.microsoft.com/en-us/free/)
-2. [Create a free Azure DevOps account](https://azure.microsoft.com/en-us/pricing/details/devops/azure-devops-services/) (Click **Start Free** under **Azure Pipelines**)
-3. [VS Code or your preferred editor](https://code.visualstudio.com/Download) Install the VS Code extensions for Python (optional)
+2. [Create a free Azure DevOps account](https://azure.microsoft.com/en-us/services/devops/?nav=min)
+3. [Visual Studio Code](https://code.visualstudio.com/Download)
 4. [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest)
 
 ### Dependencies
 
 - [Python](https://www.python.org/downloads/)
 - [Flask](https://flask.palletsprojects.com/en/1.1.x/installation/#installation)
-- [Redis—Non-Windows Download](https://redis.io/download)
-- [Redis—Windows Download](https://riptutorial.com/redis/example/29962/installing-and-running-redis-server-on-windows)
+- Redis:
+  - [Non-Windows Download](https://redis.io/download)
+  - [Windows Download](https://riptutorial.com/redis/example/29962/installing-and-running-redis-server-on-windows)
 
-### Required Python Libraries:
+### Required Python Libraries
 
 - `redis`
 - `opencensus-ext-azure`
 - `opencensus-ext-flask`
 - `flask`
 
-A requirements.txt has been provided if you want to first run the application in a local environment.
+A `requirements.txt` has been provided if you want to first run the application in a local environment.
 
 **NOTE**: The `app.run()` in `main.py` is set for your local environment. Use `app.run(host='0.0.0.0', threaded=True, debug=True)` when deploying to a VM Scale Set.
 
@@ -52,10 +91,19 @@ If you want to run the application on localhost, follow the next steps; otherwis
 
 ### Create a Virtual Environment
 
-1. Create a virtual environment inside the `azure-vote` folder
-2. Activate the environment
-3. Install dependencies from `requirements.txt`
-4. Run `main.py`
+Create a virtual environment by installing the dependencies and activating it:
+
+```bash
+pipenv install
+pipenv shell
+```
+
+Run `main.py`:
+
+```bash
+cd azure-vote
+python main.py
+```
 
 **NOTE**: The `app.run()` in `main.py` is set for your local environment. Use `app.run(host='0.0.0.0', threaded=True, debug=True)` when deploying to a VM Scale Set.
 
@@ -72,9 +120,11 @@ A bash script has been provided to automate the creation of the VMSS. You should
 
 The script will take a few minutes to create and configure all resources. Once the script is complete, you can go to Azure portal and look for the **acdnd-c4-project** resource group. Inside is the VMSS resource. You'll use the public IP address and port 50000 to connect to the VM. It's port 50000 because the inbound NAT rule of the load balancer defaults to port 50000.
 
-The following command will connect you to your VM. **Note**: Replace `[public-ip]` with the public-ip address of your VMSS.
+The following command will connect you to your VM. **Note**: Replace `[public-ip]` with the public-ip address of your VMSS:
 
-`ssh -p 50000 udacityadmin@[public-ip]`
+```bash
+ssh -p 50000 udacityadmin@[public-ip]
+```
 
 ### Setup Azure Pipeline to Deploy to VM Scale Set
 
@@ -84,13 +134,73 @@ We'll use Azure Pipelines to deploy our application to an Azure VM Scale Set. Fo
 
 ### Application Insights & Log Analytics
 
-1. Create a Log Analytics workspace resource
-2. Create an Application Insights resource and use the Log Analytics workspace created in step 1
-3. Enable Application Insights monitoring for the VM Scale Set
-4. Add the reference Application Insights to `main.py` and specify the instrumentation key
-5. Add custom event telemetry when 'Dogs' is clicked and when 'Cats' is clicked.
-6. Create a query to view the event telemetry in Log Analytics.
-7. Create a chart from query showing when 'Dogs' or 'Cats' is clicked.
+#### Create a Log Analytics workspace resource
+
+1. If you aren't already, log into Azure Portal.
+2. In the existing Resource Group `acdnd-c4-project`, click "Add".
+3. Type "Log Analytics workspace"
+4. Click "Create"
+5. Name the workspace `udacity-log`, click "Pricing Tier" and make sure "pay-as-you-go" is enabled, then click 'Review + create'
+
+#### Create an Application Insights resource
+
+1. In the existing Resource Group `acdnd-c4-project`, click "Add".
+2. Type "Application Insights"
+3. Click "Create"
+4. Name the instance `udacity-appi`, and make sure to select the log analytics workspace created above, then click 'Review + create'
+
+#### Enable Application Insights monitoring for the VM Scale Set
+
+1. Go into Azure portal, and go to to your VM Scale Set
+2. Click "Insights" on the left under the Monitoring heading
+3. Click "Enable"
+4. Note that the instances will be upgraded automatically; check "Instances" under the Settings heading for progress
+5. Once that is complete, click "Insights" on the left under the Monitoring heading.
+6. You will see several graphs that display various types of data for that instance; it could take up to 15 minutes to display the data
+
+#### Add the reference Application Insights to `main.py` and specify the instrumentation key
+
+The following imports are required:
+
+```python
+from opencensus.ext.azure.log_exporter import AzureLogHandler
+from opencensus.ext.azure import metrics_exporter
+from opencensus.stats import aggregation as aggregation_module
+from opencensus.stats import measure as measure_module
+from opencensus.stats import stats as stats_module
+from opencensus.stats import view as view_module
+from opencensus.tags import tag_map as tag_map_module
+from opencensus.ext.azure.trace_exporter import AzureExporter
+from opencensus.ext.azure.log_exporter import AzureEventHandler
+from opencensus.trace.samplers import ProbabilitySampler
+from opencensus.trace.samplers import AlwaysOnSampler
+from opencensus.trace.tracer import Tracer
+from opencensus.ext.flask.flask_middleware import FlaskMiddleware
+```
+
+Copy the instrumentation key from the Application Insights resource to `config_file.cfg`:
+
+```python
+APP_INSIGHTS_CONNECTION_STRING = 'InstrumentationKey={guid}'
+```
+
+#### Add custom event telemetry when 'Dogs' is clicked and when 'Cats' is clicked
+
+See the implementation in `main.py`.
+
+#### Create a query to view the event telemetry in Log Analytics
+
+1. Search for your Application Insights resource and go to it.
+2. Then, click "Logs" on the left side.
+3. Double-click "traces" on the left side.
+4. Click "Run" - this should return a result set with Cats and Dogs
+5. Filter the query by adding `| where timestamp > ago(36h) | limit 10`. This will show up to 10 results which happened within the last day and a half
+6. Try other ways of filtering to obtain only the results you want
+
+#### Create a chart from query showing when 'Dogs' or 'Cats' is clicked
+
+1. Click "Chart". This will make the results a chart
+2. Change the graph type and the other parameters
 
 ### Monitoring Containers
 
@@ -149,15 +259,38 @@ We'll use Azure Pipelines to deploy our application to an Azure VM Scale Set. Fo
 
 - [Python](https://www.python.org/downloads/) - Programming Language
 - [VS Code](https://code.visualstudio.com/) - Integrated Development Environment
-- [Azure DevOps](https://dev.azure.com) - Source control and pipeline creation tool.
+- [Azure DevOps](https://dev.azure.com) - Source control and pipeline creation tool
 
 ### Open-source 3rd-party
 
-- [Azure Voting App](https://github.com/Azure-Samples/azure-voting-app-redis) - Container and sample python flask app.
-- [Redis](https://redis.io/) - In memory database used for caching.
+- [Azure Voting App](https://github.com/Azure-Samples/azure-voting-app-redis) - Container and sample python flask app
+- [Redis](https://redis.io/) - In-memory database used for caching
+
+## Clean-up
+
+Clean up and remove all resources, or else you will incur charges:
+
+```bash
+az group delete --name acdnd-c4-project
+```
+
+## References
+
+- [Set up Azure Monitor for your Python application](https://docs.microsoft.com/en-us/azure/azure-monitor/app/opencensus-python)
+- [OpenCensus - A stats collection and distributed tracing framework](https://github.com/census-instrumentation/opencensus-python)
+- [OpenCensus Flask Integration](https://github.com/census-instrumentation/opencensus-python/tree/master/contrib/opencensus-ext-flask)
+- [Create a Log Analytics workspace in the Azure portal](https://docs.microsoft.com/en-us/azure/azure-monitor/logs/quick-create-workspace)
+- [Analyze your Azure infrastructure by using Azure Monitor logs](https://docs.microsoft.com/en-us/learn/modules/analyze-infrastructure-with-azure-monitor-logs)
+- [Log queries in Azure Monitor](https://docs.microsoft.com/en-us/azure/azure-monitor/logs/log-query-overview)
+- [Collect custom logs with Log Analytics agent in Azure Monitor](https://docs.microsoft.com/en-us/azure/azure-monitor/agents/data-sources-custom-logs)
+- [Create and share dashboards of Log Analytics data](https://docs.microsoft.com/en-us/azure/azure-monitor/visualize/tutorial-logs-dashboards)
+- [Usage analysis with Application Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/app/usage-overview)
+
+## Requirements
+
+Graded according to the [Project Rubric](https://review.udacity.com/#!/rubrics/2892/view).
 
 ## License
 
-[License](./LICENSE.md)
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+- **[MIT license](http://opensource.org/licenses/mit-license.php)**
+- Copyright 2021 © [Thomas Weibel](https://github.com/thom).
