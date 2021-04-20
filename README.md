@@ -21,7 +21,14 @@
     - [Create a query to view the event telemetry in Log Analytics](#create-a-query-to-view-the-event-telemetry-in-log-analytics)
     - [Create a chart from query showing when 'Dogs' or 'Cats' is clicked](#create-a-chart-from-query-showing-when-dogs-or-cats-is-clicked)
   - [Monitoring Containers](#monitoring-containers)
+    - [Cluster setup](#cluster-setup)
+    - [Create an alert in Azure Monitor](#create-an-alert-in-azure-monitor)
+    - [Create an autoscaler](#create-an-autoscaler)
+    - [Cause load on the system](#cause-load-on-the-system)
   - [Autoscaling](#autoscaling)
+    - [For the VM Scale Set, create an autoscaling rule based on metrics](#for-the-vm-scale-set-create-an-autoscaling-rule-based-on-metrics)
+    - [Trigger the conditions for the rule, causing an autoscaling event](#trigger-the-conditions-for-the-rule-causing-an-autoscaling-event)
+    - [When complete, enable manual scale](#when-complete-enable-manual-scale)
   - [Runbook](#runbook)
 - [Submissions](#submissions)
 - [Built With](#built-with)
@@ -204,20 +211,67 @@ See the implementation in `main.py`.
 
 ### Monitoring Containers
 
-1. Run `az login` to login, then run `./create-cluster.sh` to create an AKS cluster and deploy a container to it.
-2. Once that is completed, go to Insights for the cluster.
-3. Observe the state of the cluster. Note the number of nodes and number of containers.
-4. Create an alert in Azure Monitor to trigger when the number of pods increases over a certain threshold.
-5. Create an autoscaler by using the following Azure CLI command—`kubectl autoscale deployment azure-vote-front --cpu-percent=70 --min=1 --max=10`
-6. Cause load on the system
-7. After approximately 10 minutes, stop the load.
-8. Observe the state of the cluster. Note the number of pods; it should have increased and should now be decreasing.
+#### Cluster setup
+
+1. Run `az login` to login, then run `./create-cluster.sh` to create an AKS cluster and deploy a container to it
+2. Once that is completed, go to Insights for the cluster
+3. Observe the state of the clusters, note the number of nodes and number of containers
+
+#### Create an alert in Azure Monitor
+
+Create an alert in Azure Monitor to trigger when the number of pods increases over a certain threshold:
+
+1. Click "Alerts" on the left under the Monitoring heading
+2. Click "New Alert Rule"
+3. Select condition `podCount`
+4. Add action group
+5. Give your alert a name and click "Create alert rule"
+
+#### Create an autoscaler
+
+Create an autoscaler by using the following Azure CLI command:
+
+```bash
+kubectl autoscale deployment azure-vote-front --cpu-percent=70 --min=1 --max=10
+```
+
+#### Cause load on the system
+
+To cause load on the server, you can use a container and run it locally:
+
+```bash
+# Create the container and log you in to the container
+kubectl run -i --tty load-generator --image=busybox /bin/sh
+# Run the following command
+while true; do wget -q -O- http://cluster-ip-here; done
+```
+
+After approximately 10 minutes, stop the load and observe the state of the cluster. Note the number of pods, it should have increased and should now be decreasing.
 
 ### Autoscaling
 
-1. For the VM Scale Set, create an autoscaling rule based on metrics.
-2. Trigger the conditions for the rule, causing an autoscaling event.
-3. When complete, enable manual scale.
+#### For the VM Scale Set, create an autoscaling rule based on metrics
+
+1. Click "Scaling" on the left under the Settings heading
+2. Select "Custom autoscale"
+3. Add a new rule to scale out if the average CPU utilisation is above 40%
+4. Set the instance limits to 2 minimum, 4 maximum and 2 default
+
+#### Trigger the conditions for the rule, causing an autoscaling event
+
+To cause load on the server, you can run the following command on the server:
+
+```bash
+cat /dev/urandom | gzip -9 | gzip -d | gzip -9 | gzip -d > /dev/null
+```
+
+After approximately 10 minutes, stop the load and observe the state of the VMSS. Note the number of instances, it should have increased and should now be decreasing.
+
+#### When complete, enable manual scale
+
+1. Click "Scaling" on the left under the Settings heading
+2. Select "Manual scale"
+3. Set "Instance count" to 2
 
 ### Runbook
 
@@ -229,29 +283,25 @@ See the implementation in `main.py`.
 
 ## Submissions
 
-1. The `main.py` which will show the code for the Application Insights telemety data.
-2. Screenshots for the kubernetes cluster which include:
-   **Note**: Place all screenshots for Kubernetes Cluster in the `submission-screenshots/kubernetes-cluster` directory
-   - The output of the Horizontal Pod Autoscaler, showing an increase in the number of pods.
-   - The Application Insights metrics which show the increase in the number of pods.
-   - The email you received from the alert when the pod count increased.
-3. Screenshots for the Application Insights which include:
-   **Note**: Place all screenshots for Application Insights in the `submission-screenshots/application-insights` directory
-   - The metrics from the VM Scale Set instance--this will show CPU %, Available Memory %, Information about the Disk, and information about the bytes sent and received. There will be 7 graphs which display this data.
+1. The [`main.py`](azure-vote/main.py) which shows the code for the Application Insights telemetry data
+2. [Screenshots for the Kubernetes cluster](submission-screenshots/kubernetes-cluster) which include:
+   - The output of the Horizontal Pod Autoscaler, showing an increase in the number of pods
+   - The Application Insights metrics which show the increase in the number of pods
+   - The email you received from the alert when the pod count increased
+3. [Screenshots for the Application Insights](submission-screenshots/application-insights) which include:
+   - The metrics from the VM Scale Set instance - this will show CPU %, Available Memory %, Information about the Disk, and information about the bytes sent and received. There will be 7 graphs which display this data
    - Application Insight Events which show the results of clicking 'vote' for each 'Dogs' & 'Cats'
-   - The output of the `traces` query in Azure Log Analytics.
-   - The chart created from the output of the `traces` query.
-4. Screenshots for the Autoscaling of the VM Scale Set which include:
-   **Note**: Place all screenshots for Autoscaling VMSS in the `submission-screenshots/autoscaling-vmss` directory
-   - The conditions for which autoscaling will be triggered (found in the 'Scaling' item in the VM Scale Set).
-   - The Activity log of the VM scale set which shows that it scaled up with timestamp.
-   - The new instances being created.
-   - The metrics which show the load increasing, then decreasing once scaled up with timestamp.
-5. Screenshots for the Azure Runbook which include:
-   **Note**: Place all screenshots for RunBook in the `submission-screenshots/runbook` directory
-   - The alert configuration in Azure Monitor which shows the resource, condition, action group (this should include a reference to your Runbook), and alert rule details (may need 2 screenshots).
-   - The email you received from the alert when the Runbook was executed.
-   - The summary of the alert which shows 'why did this alert fire?', timestamps, and the criterion in which it fired.
+   - The output of the `traces` query in Azure Log Analytics
+   - The chart created from the output of the `traces` query
+4. [Screenshots for the Autoscaling of the VM Scale Set](submission-screenshots/autoscaling-vmss) which include:
+   - The conditions for which autoscaling will be triggered (found in the 'Scaling' item in the VM Scale Set)
+   - The Activity log of the VM scale set which shows that it scaled up with timestamp
+   - The new instances being created
+   - The metrics which show the load increasing, then decreasing once scaled up with timestamp
+5. [Screenshots for the Azure Runbook](submission-screenshots/runbook) which include:
+   - The alert configuration in Azure Monitor which shows the resource, condition, action group (this should include a reference to your Runbook), and alert rule details (may need 2 screenshots)
+   - The email you received from the alert when the Runbook was executed
+   - The summary of the alert which shows 'why did this alert fire?', timestamps, and the criterion in which it fired
 
 ## Built With
 
@@ -285,6 +335,7 @@ az group delete --name acdnd-c4-project
 - [Collect custom logs with Log Analytics agent in Azure Monitor](https://docs.microsoft.com/en-us/azure/azure-monitor/agents/data-sources-custom-logs)
 - [Create and share dashboards of Log Analytics data](https://docs.microsoft.com/en-us/azure/azure-monitor/visualize/tutorial-logs-dashboards)
 - [Usage analysis with Application Insights](https://docs.microsoft.com/en-us/azure/azure-monitor/app/usage-overview)
+- [Container insights overview](https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-overview)
 
 ## Requirements
 
